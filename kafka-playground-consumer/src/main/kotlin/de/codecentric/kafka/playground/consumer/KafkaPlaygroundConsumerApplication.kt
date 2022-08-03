@@ -1,10 +1,11 @@
-package de.codecentric.kafka.playground.producer
+package de.codecentric.kafka.playground.consumer
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class KafkaPlaygroundProducerApplication
+class KafkaPlaygroundConsumerApplication
+
     fun main(args: Array<String>) {
-        runApplication<KafkaPlaygroundProducerApplication>(*args)
+        runApplication<KafkaPlaygroundConsumerApplication>(*args)
     }
