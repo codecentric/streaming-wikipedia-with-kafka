@@ -1,0 +1,33 @@
+version: '3.8'
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+  kafka:
+    image: wurstmeister/kafka
+    links:
+      - zookeeper
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: INTERNAL://kafka:9092,OUTSIDE://kafka:29092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,OUTSIDE://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CREATE_TOPICS: "space-probe-telemetry-data:3:1, space-probe-aggregate-telemetry-data-nasa:3:1, space-probe-aggregate-telemetry-data-esa:3:1"
+    ports:
+      - "29092:29092"
+  akhq:
+    image: tchiotludo/akhq
+    depends_on:
+      - kafka
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          connections:
+            wurstmeister-kafka:
+              properties:
+                bootstrap.servers: "kafka:9092"
+                default.api.timeout.ms: "60000"
+    ports:
+      - "9080:8080"
