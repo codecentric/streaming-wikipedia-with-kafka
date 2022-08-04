@@ -8,10 +8,7 @@ import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 
 @Component
-class SampleProducer (@Autowired val kafkaTemplate: KafkaTemplate<String, String>){
-
-    @Value("\${topic.name.producer}")
-    val topicName: String = "";
+class SampleProducer (@Autowired val kafkaTemplate: KafkaTemplate<String, String>, @Value("\${topic.name.producer}") val topicName: String){
 
     @Scheduled(fixedDelay = 10000)
     fun send() {
