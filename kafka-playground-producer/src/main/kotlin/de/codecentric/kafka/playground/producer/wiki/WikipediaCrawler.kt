@@ -1,5 +1,7 @@
-package de.codecentric.kafka.playground.producer
+package de.codecentric.kafka.playground.producer.wiki
 
+import com.google.gson.Gson
+import de.codecentric.kafka.playground.producer.wiki.types.WikipediaEvent
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.event.ApplicationReadyEvent
@@ -20,11 +22,14 @@ class WikipediaCrawler(@Value("\${wikipedia.base.url}") val wikipediaBaseUrl: St
         val client: WebClient = WebClient.create(wikipediaBaseUrl);
         val type = object : ParameterizedTypeReference<ServerSentEvent<String>>() {};
         val eventStream: Flux<ServerSentEvent<String>> = client.get().uri(wikipediaEventPath).retrieve().bodyToFlux(type);
+        val gson = Gson();
+        val relevantWikis = listOf("https://en.wikipedia.org", "https://de.wikipedia.org");
         eventStream.subscribe { content ->
-                if (content.data() != null
-                        && (content.data()!!.contains("https://de.") || content.data()!!.contains("https://en."))) {
-                    println(content.data())
-                    wikipediaEventProducer.send(content.data()!!)
+                if (content.data() != null) {
+                    val event = gson.fromJson(content.data()!!, WikipediaEvent::class.java);
+                    if (relevantWikis.contains(event.serverUrl)) {
+                        wikipediaEventProducer.send(event);
+                    }
                 }
         }
     }
