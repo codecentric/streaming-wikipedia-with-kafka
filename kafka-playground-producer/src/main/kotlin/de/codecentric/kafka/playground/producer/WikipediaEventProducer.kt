@@ -9,11 +9,10 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 @Component
-class SampleProducer (@Autowired val kafkaTemplate: KafkaTemplate<String, String>, @Value("\${topic.name.producer}") val topicName: String){
+class WikipediaEventProducer (@Autowired val kafkaTemplate: KafkaTemplate<String, String>, @Value("\${topic.name.producer}") val topicName: String){
 
     // @Scheduled(fixedDelay = 10000)
-    fun send() {
-        val message: String = "It's now ${LocalDateTime.now()}";
+    fun send(message: String) {
         val key: String = UUID.randomUUID().toString();
         kafkaTemplate.send(topicName, key, message);
     }
