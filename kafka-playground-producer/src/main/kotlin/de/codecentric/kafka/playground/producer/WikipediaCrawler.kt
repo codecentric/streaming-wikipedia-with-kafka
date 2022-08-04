@@ -20,9 +20,11 @@ class WikipediaCrawler(@Value("\${wikipedia.base.url}") val wikipediaBaseUrl: St
         val client: WebClient = WebClient.create(wikipediaBaseUrl);
         val type = object : ParameterizedTypeReference<ServerSentEvent<String>>() {};
         val eventStream: Flux<ServerSentEvent<String>> = client.get().uri(wikipediaEventPath).retrieve().bodyToFlux(type);
-        eventStream.subscribe { content -> if (content.data() != null) {
-            println(content.data())
-            wikipediaEventProducer.send(content.data()!!)
-        } }
+        eventStream.subscribe { content -> {
+            if (content.data() != null && (content.data()!!.contains("https://de.") || content.data()!!.contains("https://en."))) {
+                println(content.data())
+                wikipediaEventProducer.send(content.data()!!)
+            }
+        }}
     }
 }
