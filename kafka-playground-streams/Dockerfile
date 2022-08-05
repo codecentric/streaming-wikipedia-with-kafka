@@ -9,6 +9,6 @@ EXPOSE 7082
 
 RUN mkdir /app
 
-COPY --from=builder /home/gradle/src/build/libs/*.jar /app/consumer.jar
+COPY --from=builder /home/gradle/src/build/libs/*.jar /app/streams-consumer.jar
 
-ENTRYPOINT ["java","-jar","/app/consumer.jar"]
+ENTRYPOINT ["java","-jar","/app/streams-consumer.jar"]
