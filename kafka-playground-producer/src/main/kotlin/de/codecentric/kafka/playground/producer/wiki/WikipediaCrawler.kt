@@ -28,7 +28,7 @@ class WikipediaCrawler(@Value("\${wikipedia.base.url}") val wikipediaBaseUrl: St
                   .uri(wikipediaEventPath)
                   .retrieve()
                   .bodyToFlux(type)
-                  .retryWhen(Retry.max(3).filter { error -> error is WebClientResponseException && error.rawStatusCode == 200 });
+                  .retryWhen(Retry.maxInARow(3).filter { error -> error is WebClientResponseException && error.rawStatusCode == 200 });
 
         val gson = Gson();
         val relevantWikis = listOf("https://en.wikipedia.org", "https://de.wikipedia.org");
