@@ -27,7 +27,7 @@ class LanguageCountProcessor(@Value("\${topic.name.consumer}") val inputTopicNam
 
         val languageCounts: KTable<String, Long> =
             messageStream.groupBy ({ _, wikiEvent -> wikiEvent.serverUrl },
-                                    Grouped.with("LangAggr", Serdes.String(), WikipediaEventSerDe()))
+                                    Grouped.with("LangGroup", Serdes.String(), WikipediaEventSerDe()))
                          .count();
 
         languageCounts.toStream()
