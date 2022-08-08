@@ -1,10 +1,12 @@
 package de.codecentric.kafka.playground.streams.wiki
 
+import de.codecentric.kafka.playground.streams.wiki.serialization.WikipediaEventSerDe
 import de.codecentric.kafka.playground.streams.wiki.types.WikipediaEvent
 import mu.KotlinLogging
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.kstream.Consumed
+import org.apache.kafka.streams.kstream.Grouped
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.KTable
 import org.apache.kafka.streams.kstream.Produced
@@ -23,8 +25,10 @@ class LanguageCountProcessor(@Value("\${topic.name.consumer}") val inputTopicNam
         val messageStream: KStream<String, WikipediaEvent> =
             streamsBuilder.stream(inputTopicName, Consumed.with(KEY_SERDE, VALUE_SERDE));
 
-        val languageCounts: KTable<String, Long> = messageStream.groupBy { key, wikiEvent -> wikiEvent.serverUrl }
-                                                                .count();
+        val languageCounts: KTable<String, Long> =
+            messageStream.groupBy ({ _, wikiEvent -> wikiEvent.serverUrl },
+                                    Grouped.with("LangAggr", Serdes.String(), WikipediaEventSerDe()))
+                         .count();
 
         languageCounts.toStream()
                       .peek { key, value -> LOG.info { "Key $key has value $value" } }
