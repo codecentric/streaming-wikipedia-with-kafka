@@ -10,7 +10,9 @@ import org.springframework.core.ParameterizedTypeReference
 import org.springframework.http.codec.ServerSentEvent
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import reactor.core.publisher.Flux
+import reactor.util.retry.Retry
 
 @Component
 class WikipediaCrawler(@Value("\${wikipedia.base.url}") val wikipediaBaseUrl: String,
@@ -21,16 +23,22 @@ class WikipediaCrawler(@Value("\${wikipedia.base.url}") val wikipediaBaseUrl: St
     fun crawl() {
         val client: WebClient = WebClient.create(wikipediaBaseUrl);
         val type = object : ParameterizedTypeReference<ServerSentEvent<String>>() {};
-        val eventStream: Flux<ServerSentEvent<String>> = client.get().uri(wikipediaEventPath).retrieve().bodyToFlux(type);
+        val eventStream: Flux<ServerSentEvent<String>> =
+            client.get()
+                  .uri(wikipediaEventPath)
+                  .retrieve()
+                  .bodyToFlux(type)
+                  .retryWhen(Retry.max(3).filter { error -> error is WebClientResponseException && error.rawStatusCode == 200 });
+
         val gson = Gson();
         val relevantWikis = listOf("https://en.wikipedia.org", "https://de.wikipedia.org");
         eventStream.subscribe { content ->
-                if (content.data() != null) {
-                    val event = gson.fromJson(content.data()!!, WikipediaEvent::class.java);
-                    if (relevantWikis.contains(event.serverUrl)) {
-                        wikipediaEventProducer.send(event);
-                    }
+            if (content.data() != null) {
+                val event = gson.fromJson(content.data()!!, WikipediaEvent::class.java);
+                if (relevantWikis.contains(event.serverUrl)) {
+                    wikipediaEventProducer.send(event);
                 }
+            }
         }
     }
 }
