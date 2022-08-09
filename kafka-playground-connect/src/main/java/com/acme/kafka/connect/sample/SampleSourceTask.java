@@ -37,14 +37,18 @@ public class SampleSourceTask extends SourceTask {
 
     @Override
     public void start(Map<String, String> properties) {
-        log.info("Starting Task");
+        log.info("Starting Sample Source Task");
         config = new SampleSourceConnectorConfig(properties);
         client = ClientBuilder.newClient();
+
+        log.info("Configure WebTarget with {}", config.getString(SampleSourceConnectorConfig.SSE_URI_PARAM_CONFIG));
         WebTarget target = client.target(config.getString(SampleSourceConnectorConfig.SSE_URI_PARAM_CONFIG));
 
         eventSource = SseEventSource.target(target).build();
         eventSource.register(onEvent, onError, onComplete);
+        log.info("Is EventSource open: {}", eventSource.isOpen());
         eventSource.open();
+        log.info("Is EventSource open: {}", eventSource.isOpen());
     }
 
     // A new event is received
