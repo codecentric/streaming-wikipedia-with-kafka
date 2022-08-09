@@ -1,8 +1,6 @@
 {
     "name": "basic-example",
     "config": {
-        "first.required.param": "1dqwd",
-        "second.required.param": "2dqwdw",
         "connector.class": "com.acme.kafka.connect.sample.SampleSourceConnector",
         "topic": "wikipedia-via-connect",
         "sse.uri": "https://stream.wikimedia.org/v2/stream/recentchange",

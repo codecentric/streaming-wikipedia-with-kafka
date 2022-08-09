@@ -1,31 +1,28 @@
 package com.acme.kafka.connect.sample;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.kafka.common.config.Config;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigValue;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceConnector;
-import org.apache.kafka.connect.util.ConnectorUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.acme.kafka.connect.sample.SampleSourceConnectorConfig.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.acme.kafka.connect.sample.SampleSourceConnectorConfig.CONFIG_DEF;
+import static com.acme.kafka.connect.sample.SampleSourceConnectorConfig.SSE_URI_PARAM_CONFIG;
+import static com.acme.kafka.connect.sample.SampleSourceConnectorConfig.TOPIC_PARAM_CONFIG;
 
 public class SampleSourceConnector extends SourceConnector {
 
     private final Logger log = LoggerFactory.getLogger(SampleSourceConnector.class);
 
     private Map<String, String> originalProps;
-    private SampleSourceConnectorConfig config;
-    private SourceMonitorThread sourceMonitorThread;
 
     @Override
     public String version() {
@@ -47,22 +44,21 @@ public class SampleSourceConnector extends SourceConnector {
         Config config = super.validate(connectorConfigs);
         List<ConfigValue> configValues = config.configValues();
         boolean missingTopicDefinition = true;
+        boolean missingSseUriDefinition = true;
         for (ConfigValue configValue : configValues) {
-            if (configValue.name().equals(FIRST_REQUIRED_PARAM_CONFIG)
-            || configValue.name().equals(SECOND_REQUIRED_PARAM_CONFIG)) {
-                if (configValue.value() != null) {
-                    missingTopicDefinition = false;
-                    break;
-                }
+            if (configValue.name().equals(TOPIC_PARAM_CONFIG) && configValue.value() != null) {
+                missingTopicDefinition = false;
+            }
+            if (configValue.name().equals(SSE_URI_PARAM_CONFIG) && configValue.value() != null) {
+                missingSseUriDefinition = false;
+            }
+            if (!missingTopicDefinition && !missingSseUriDefinition) {
+                break;
             }
         }
-        if (missingTopicDefinition) {
+        if (missingTopicDefinition || missingSseUriDefinition) {
             throw new ConnectException(String.format(
-                "There is no definition of [XYZ] in the "
-                + "configuration. Either the property "
-                + "'%s' or '%s' must be set in the configuration.",
-                FIRST_NONREQUIRED_PARAM_CONFIG,
-                SECOND_NONREQUIRED_PARAM_CONFIG));
+                "Properties '%s' and '%s' must be set in the configuration.", TOPIC_PARAM_CONFIG, SSE_URI_PARAM_CONFIG));
         }
         return config;
     }
@@ -70,40 +66,18 @@ public class SampleSourceConnector extends SourceConnector {
     @Override
     public void start(Map<String, String> originalProps) {
         this.originalProps = originalProps;
-        config = new SampleSourceConnectorConfig(originalProps);
-        String firstParam = config.getString(FIRST_NONREQUIRED_PARAM_CONFIG);
-        String secondParam = config.getString(SECOND_NONREQUIRED_PARAM_CONFIG);
-        int monitorThreadTimeout = config.getInt(MONITOR_THREAD_TIMEOUT_CONFIG);
-        sourceMonitorThread = new SourceMonitorThread(
-            context, firstParam, secondParam, monitorThreadTimeout);
-        sourceMonitorThread.start();
+        new SampleSourceConnectorConfig(originalProps);
+        log.info("Starting connector");
     }
 
     @Override
     public List<Map<String, String>> taskConfigs(int maxTasks) {
-        List<Map<String, String>> taskConfigs = new ArrayList<>();
-        // The partitions below represent the source's part that
-        // would likely to be broken down into tasks... such as
-        // tables in a database.
-        List<String> partitions = sourceMonitorThread.getCurrentSources();
-        if (partitions.isEmpty()) {
-            taskConfigs = Collections.emptyList();
-            log.warn("No tasks created because there is zero to work on");
-        } else {
-            int numTasks = Math.min(partitions.size(), maxTasks);
-            List<List<String>> partitionSources = ConnectorUtils.groupPartitions(partitions, numTasks);
-            for (List<String> source : partitionSources) {
-                Map<String, String> taskConfig = new HashMap<>(originalProps);
-                taskConfig.put("sources", String.join(",", source));
-                taskConfigs.add(taskConfig);
-            }
-        }
-        return taskConfigs;
+        return Collections.singletonList(new HashMap<>(originalProps));
     }
 
     @Override
     public void stop() {
-        sourceMonitorThread.shutdown();
+        log.info("Stopping connector");
     }
 
 }

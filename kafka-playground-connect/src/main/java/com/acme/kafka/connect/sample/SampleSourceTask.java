@@ -1,26 +1,34 @@
 package com.acme.kafka.connect.sample;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.acme.kafka.connect.sample.SampleSourceConnectorConfig.*;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.sse.InboundSseEvent;
+import javax.ws.rs.sse.SseEventSource;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.function.Consumer;
 
 public class SampleSourceTask extends SourceTask {
 
-    private static Logger log = LoggerFactory.getLogger(SampleSourceTask.class);
+    private static final Logger log = LoggerFactory.getLogger(SampleSourceTask.class);
+
+    private final Queue<String> received = new LinkedList<>();
 
     private SampleSourceConnectorConfig config;
-    private int monitorThreadTimeout;
-    private List<String> sources;
+
+    private Client client;
+    private SseEventSource eventSource;
 
     @Override
     public String version() {
@@ -29,29 +37,58 @@ public class SampleSourceTask extends SourceTask {
 
     @Override
     public void start(Map<String, String> properties) {
+        log.info("Starting Task");
         config = new SampleSourceConnectorConfig(properties);
-        monitorThreadTimeout = config.getInt(MONITOR_THREAD_TIMEOUT_CONFIG);
-        String sourcesStr = properties.get("sources");
-        sources = Arrays.asList(sourcesStr.split(","));
+        client = ClientBuilder.newClient();
+        WebTarget target = client.target(config.getString(SampleSourceConnectorConfig.SSE_URI_PARAM_CONFIG));
+
+        eventSource = SseEventSource.target(target).build();
+        eventSource.register(onEvent, onError, onComplete);
+        eventSource.open();
     }
 
+    // A new event is received
+    private final Consumer<InboundSseEvent> onEvent = (inboundSseEvent) -> {
+        log.info("Reading data and adding to queue");
+        String data = inboundSseEvent.readData();
+        received.add(data);
+    };
+
+    //Error
+    private final Consumer<Throwable> onError = (throwable) -> {
+        throwable.printStackTrace();
+    };
+
+    //Connection close and there is nothing to receive
+    private final Runnable onComplete = () -> {
+        System.out.println("Done!");
+    };
+
     @Override
-    public List<SourceRecord> poll() throws InterruptedException {
-        Thread.sleep(monitorThreadTimeout / 2);
+    public List<SourceRecord> poll() {
         List<SourceRecord> records = new ArrayList<>();
-        for (String source : sources) {
-            log.info("Polling data from the source '" + source + "'");
-            records.add(new SourceRecord(
-                Collections.singletonMap("source", source),
-                Collections.singletonMap("offset", 0),
-                source, null, null, null, Schema.BYTES_SCHEMA,
-                String.format("Data from %s", source).getBytes()));
+        while(!received.isEmpty()) {
+            String current = received.poll();
+            if (current != null) {
+                records.add(new SourceRecord(Collections.emptyMap(), Collections.emptyMap(), config.getString(SampleSourceConnectorConfig.TOPIC_PARAM_CONFIG), null, null, Schema.STRING_SCHEMA, current));
+            }
         }
         return records;
     }
 
     @Override
     public void stop() {
+        log.info("Stopping Task");
+        if (eventSource != null) {
+            eventSource.close();
+        } else {
+            log.info("eventsource is null");
+        }
+        if (client != null) {
+            client.close();
+        } else {
+            log.info("Client is null");
+        }
     }
 
 }
