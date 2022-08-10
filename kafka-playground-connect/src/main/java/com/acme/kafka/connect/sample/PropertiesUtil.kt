@@ -1,33 +1,26 @@
-package com.acme.kafka.connect.sample;
+package com.acme.kafka.connect.sample
 
-import java.io.InputStream;
-import java.util.Properties;
+import mu.KotlinLogging
+import java.util.*
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+object PropertiesUtil {
+    private val log = KotlinLogging.logger {}
 
-public final class PropertiesUtil {
+    private const val CONNECTOR_VERSION = "connector.version"
+    private const val propertiesFile = "/kafka-connect-sample.properties"
+    private lateinit var properties: Properties
 
-    private static final String CONNECTOR_VERSION = "connector.version";
-
-    private static Logger log = LoggerFactory.getLogger(PropertiesUtil.class);
-    private static String propertiesFile = "/kafka-connect-sample.properties";
-    private static Properties properties;
-
-    static {
-        try (InputStream stream = PropertiesUtil.class.getResourceAsStream(propertiesFile)) {
-            properties = new Properties();
-            properties.load(stream);
-        } catch (Exception ex) {
-            log.warn("Error while loading properties: ", ex);
+    init {
+        try {
+            PropertiesUtil::class.java.getResourceAsStream(propertiesFile).use { stream ->
+                properties = Properties()
+                properties.load(stream)
+            }
+        } catch (ex: Exception) {
+            log.warn("Error while loading properties: ", ex)
         }
     }
 
-    public static String getConnectorVersion() {
-        return properties.getProperty(CONNECTOR_VERSION);
-    }
-
-    private PropertiesUtil() {
-    }
-
+    val connectorVersion: String
+        get() = properties.getProperty(CONNECTOR_VERSION)
 }

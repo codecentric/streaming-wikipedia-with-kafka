@@ -1,35 +1,25 @@
-package com.acme.kafka.connect.sample;
+package com.acme.kafka.connect.sample
 
-import org.apache.kafka.common.config.AbstractConfig;
-import org.apache.kafka.common.config.ConfigDef;
-import org.apache.kafka.common.config.ConfigDef.Importance;
-import org.apache.kafka.common.config.ConfigDef.Type;
+import org.apache.kafka.common.config.AbstractConfig
+import org.apache.kafka.common.config.ConfigDef
 
-import java.util.Map;
+class SampleSourceConnectorConfig(originalProps: Map<*, *>?) : AbstractConfig(CONFIG_DEF, originalProps) {
+    companion object {
+        const val TOPIC_PARAM_CONFIG = "topic"
+        private const val TOPIC_PARAM_DOC = "This is the topic where the events will be sent to"
+        const val SSE_URI_PARAM_CONFIG = "sse.uri"
+        private const val SSE_URI_PARAM_DOC = "The URI where the application will fetch events"
+        val CONFIG_DEF = createConfigDef()
+        private fun createConfigDef(): ConfigDef {
+            val configDef = ConfigDef()
+            addParams(configDef)
+            return configDef
+        }
 
-public class SampleSourceConnectorConfig extends AbstractConfig {
-
-    public SampleSourceConnectorConfig(final Map<?, ?> originalProps) {
-        super(CONFIG_DEF, originalProps);
+        private fun addParams(configDef: ConfigDef) {
+            configDef
+                .define(TOPIC_PARAM_CONFIG, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, TOPIC_PARAM_DOC)
+                .define(SSE_URI_PARAM_CONFIG, ConfigDef.Type.STRING, ConfigDef.Importance.HIGH, SSE_URI_PARAM_DOC)
+        }
     }
-
-    public static final String TOPIC_PARAM_CONFIG = "topic";
-    private static final String TOPIC_PARAM_DOC = "This is the topic where the events will be sent to";
-
-    public static final String SSE_URI_PARAM_CONFIG = "sse.uri";
-    private static final String SSE_URI_PARAM_DOC = "The URI where the application will fetch events";
-
-    public static final ConfigDef CONFIG_DEF = createConfigDef();
-
-    private static ConfigDef createConfigDef() {
-        ConfigDef configDef = new ConfigDef();
-        addParams(configDef);
-        return configDef;
-    }
-
-    private static void addParams(final ConfigDef configDef) {
-        configDef.define(TOPIC_PARAM_CONFIG, Type.STRING, Importance.HIGH, TOPIC_PARAM_DOC)
-            .define(SSE_URI_PARAM_CONFIG, Type.STRING, Importance.HIGH, SSE_URI_PARAM_DOC);
-    }
-
 }

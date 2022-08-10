@@ -1,83 +1,60 @@
-package com.acme.kafka.connect.sample;
+package com.acme.kafka.connect.sample
 
-import org.apache.kafka.common.config.Config;
-import org.apache.kafka.common.config.ConfigDef;
-import org.apache.kafka.common.config.ConfigValue;
-import org.apache.kafka.connect.connector.Task;
-import org.apache.kafka.connect.errors.ConnectException;
-import org.apache.kafka.connect.source.SourceConnector;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.acme.kafka.connect.sample.SampleSourceConnectorConfig.Companion.SSE_URI_PARAM_CONFIG
+import com.acme.kafka.connect.sample.SampleSourceConnectorConfig.Companion.TOPIC_PARAM_CONFIG
+import mu.KotlinLogging
+import org.apache.kafka.common.config.Config
+import org.apache.kafka.connect.connector.Task
+import org.apache.kafka.connect.errors.ConnectException
+import org.apache.kafka.connect.source.SourceConnector
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+class SampleSourceConnector : SourceConnector() {
+    private val log = KotlinLogging.logger {}
+    private lateinit var originalProps: Map<String, String>
 
-import static com.acme.kafka.connect.sample.SampleSourceConnectorConfig.CONFIG_DEF;
-import static com.acme.kafka.connect.sample.SampleSourceConnectorConfig.SSE_URI_PARAM_CONFIG;
-import static com.acme.kafka.connect.sample.SampleSourceConnectorConfig.TOPIC_PARAM_CONFIG;
+    override fun version() = PropertiesUtil.connectorVersion
 
-public class SampleSourceConnector extends SourceConnector {
+    override fun config() = SampleSourceConnectorConfig.CONFIG_DEF
 
-    private final Logger log = LoggerFactory.getLogger(SampleSourceConnector.class);
+    override fun taskClass(): Class<out Task?> = SampleSourceTask::class.java
 
-    private Map<String, String> originalProps;
+    override fun validate(connectorConfigs: Map<String, String>): Config {
+        val config = super.validate(connectorConfigs)
+        val configValues = config.configValues()
+        var missingTopicDefinition = true
+        var missingSseUriDefinition = true
 
-    @Override
-    public String version() {
-        return PropertiesUtil.getConnectorVersion();
-    }
-
-    @Override
-    public ConfigDef config() {
-        return CONFIG_DEF;
-    }
-
-    @Override
-    public Class<? extends Task> taskClass() {
-        return SampleSourceTask.class;
-    }
-
-    @Override
-    public Config validate(Map<String, String> connectorConfigs) {
-        Config config = super.validate(connectorConfigs);
-        List<ConfigValue> configValues = config.configValues();
-        boolean missingTopicDefinition = true;
-        boolean missingSseUriDefinition = true;
-        for (ConfigValue configValue : configValues) {
-            if (configValue.name().equals(TOPIC_PARAM_CONFIG) && configValue.value() != null) {
-                missingTopicDefinition = false;
+        for (configValue in configValues) {
+            when(configValue.name()) {
+                TOPIC_PARAM_CONFIG -> if (configValue.value() != null) missingTopicDefinition = false
+                SSE_URI_PARAM_CONFIG -> if (configValue.value() != null) missingSseUriDefinition = false
             }
-            if (configValue.name().equals(SSE_URI_PARAM_CONFIG) && configValue.value() != null) {
-                missingSseUriDefinition = false;
-            }
+
             if (!missingTopicDefinition && !missingSseUriDefinition) {
-                break;
+                break
             }
         }
         if (missingTopicDefinition || missingSseUriDefinition) {
-            throw new ConnectException(String.format(
-                "Properties '%s' and '%s' must be set in the configuration.", TOPIC_PARAM_CONFIG, SSE_URI_PARAM_CONFIG));
+            throw ConnectException(
+                String.format(
+                    "Properties '%s' and '%s' must be set in the configuration.",
+                    TOPIC_PARAM_CONFIG,
+                    SSE_URI_PARAM_CONFIG
+                )
+            )
         }
-        return config;
+        return config
     }
 
-    @Override
-    public void start(Map<String, String> originalProps) {
-        this.originalProps = originalProps;
-        new SampleSourceConnectorConfig(originalProps);
-        log.info("Starting connector");
+    override fun start(originalProps: Map<String, String>) {
+        this.originalProps = originalProps
+        SampleSourceConnectorConfig(originalProps)
+        log.info("Starting connector")
     }
 
-    @Override
-    public List<Map<String, String>> taskConfigs(int maxTasks) {
-        return Collections.singletonList(new HashMap<>(originalProps));
-    }
+    override fun taskConfigs(maxTasks: Int) = listOf<Map<String, String>>(HashMap(originalProps))
 
-    @Override
-    public void stop() {
-        log.info("Stopping connector");
+    override fun stop() {
+        log.info("Stopping connector")
     }
-
 }

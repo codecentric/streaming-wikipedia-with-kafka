@@ -1,51 +1,43 @@
-package com.acme.kafka.connect.sample;
+package com.acme.kafka.connect.sample
 
-import com.launchdarkly.eventsource.MessageEvent;
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.source.SourceRecord;
-import org.apache.kafka.connect.source.SourceTask;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.acme.kafka.connect.sample.SampleSourceConnectorConfig.Companion.SSE_URI_PARAM_CONFIG
+import com.acme.kafka.connect.sample.SampleSourceConnectorConfig.Companion.TOPIC_PARAM_CONFIG
+import mu.KotlinLogging
+import org.apache.kafka.connect.data.Schema
+import org.apache.kafka.connect.source.SourceRecord
+import org.apache.kafka.connect.source.SourceTask
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+class SampleSourceTask : SourceTask() {
+    private val log = KotlinLogging.logger {}
 
-public class SampleSourceTask extends SourceTask {
+    private lateinit var config: SampleSourceConnectorConfig
+    private lateinit var sseClient: ServerSentEventClient
 
-    private static final Logger log = LoggerFactory.getLogger(SampleSourceTask.class);
+    override fun version() = PropertiesUtil.connectorVersion
 
-    private SampleSourceConnectorConfig config;
-    private ServerSentEventClient sseClient;
-
-    @Override
-    public String version() {
-        return PropertiesUtil.getConnectorVersion();
+    override fun start(properties: Map<String, String>) {
+        log.info("Starting Sample Source Task")
+        config = SampleSourceConnectorConfig(properties)
+        sseClient = ServerSentEventClient(config.getString(SSE_URI_PARAM_CONFIG))
+        sseClient.start()
     }
 
-    @Override
-    public void start(Map<String, String> properties) {
-        log.info("Starting Sample Source Task");
-        config = new SampleSourceConnectorConfig(properties);
-        sseClient = new ServerSentEventClient(config.getString(SampleSourceConnectorConfig.SSE_URI_PARAM_CONFIG));
-        sseClient.start();
-    }
+    override fun poll() = sseClient.receiveEvents()
+            .map { event ->
+                    SourceRecord(
+                        emptyMap<String, Any>(),
+                        emptyMap<String, Any>(),
+                        config.getString(TOPIC_PARAM_CONFIG),
+                        null,
+                        null,
+                        Schema.STRING_SCHEMA,
+                        event.data
+                    )
+            }
+            .toList()
 
-    @Override
-    public List<SourceRecord> poll() {
-        List<SourceRecord> records = new ArrayList<>();
-        List<MessageEvent> received = sseClient.getEvents();
-        for (MessageEvent event : received) {
-            records.add(new SourceRecord(Collections.emptyMap(), Collections.emptyMap(), config.getString(SampleSourceConnectorConfig.TOPIC_PARAM_CONFIG), null, null, Schema.STRING_SCHEMA, event.getData()));
-        }
-        return records;
+    override fun stop() {
+        log.info("Stopping Task")
+        sseClient.stop()
     }
-
-    @Override
-    public void stop() {
-        log.info("Stopping Task");
-        sseClient.stop();
-    }
-
 }
