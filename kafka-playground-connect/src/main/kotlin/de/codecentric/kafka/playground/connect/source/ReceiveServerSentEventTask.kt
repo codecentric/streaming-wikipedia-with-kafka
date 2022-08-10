@@ -23,6 +23,7 @@ class ReceiveServerSentEventTask : SourceTask() {
     }
 
     override fun poll() = sseClient.receiveEvents()
+            .filter { event -> event.data.startsWith("{") || event.data.startsWith("[") } // send only events where data is valid json (starts with { or [)
             .map { event ->
                     SourceRecord(
                         emptyMap<String, Any>(),
