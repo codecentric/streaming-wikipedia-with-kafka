@@ -37,8 +37,10 @@ class ServerSentEventClient(url: String) : EventHandler {
         val records: MutableList<MessageEvent> = ArrayList()
         while (!eventQueue.isEmpty()) {
             val current = eventQueue.poll()
-            if (current == null || current.data == null) {
-                log.info("Received no event")
+            if (current == null) {
+                log.info("Received null event")
+            } else if (current.data == null) {
+                log.info("Data is null");
             } else {
                 records.add(current)
             }
