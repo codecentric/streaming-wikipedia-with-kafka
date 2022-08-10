@@ -1,9 +1,9 @@
-package com.acme.kafka.connect.sample
+package de.codecentric.kafka.playground.connect.source
 
 import org.apache.kafka.common.config.AbstractConfig
 import org.apache.kafka.common.config.ConfigDef
 
-class SampleSourceConnectorConfig(originalProps: Map<*, *>?) : AbstractConfig(CONFIG_DEF, originalProps) {
+class ServerSentEventSourceConnectorConfig(originalProps: Map<*, *>?) : AbstractConfig(CONFIG_DEF, originalProps) {
     companion object {
         const val TOPIC_PARAM_CONFIG = "topic"
         private const val TOPIC_PARAM_DOC = "This is the topic where the events will be sent to"

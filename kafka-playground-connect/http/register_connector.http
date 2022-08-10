@@ -1,8 +1,8 @@
-# curl -X POST -H "Content-Type:application/json" -d @../examples/basic-example.json http://localhost:8083/connectors
+# curl -X POST -H "Content-Type:application/json" -d @../examples/sse-source-connect.json http://localhost:8083/connectors
 POST http://localhost:8083/connectors
 Content-Type: application/json
 
-< ../examples/basic-example.json
+< ./sse-source-connect.json
 
 ###
 

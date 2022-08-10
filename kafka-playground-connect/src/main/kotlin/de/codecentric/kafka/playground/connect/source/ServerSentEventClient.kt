@@ -1,4 +1,4 @@
-package com.acme.kafka.connect.sample
+package de.codecentric.kafka.playground.connect.source
 
 import com.launchdarkly.eventsource.EventHandler
 import com.launchdarkly.eventsource.EventSource

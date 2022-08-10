@@ -1,22 +1,22 @@
-package com.acme.kafka.connect.sample
+package de.codecentric.kafka.playground.connect.source
 
-import com.acme.kafka.connect.sample.SampleSourceConnectorConfig.Companion.SSE_URI_PARAM_CONFIG
-import com.acme.kafka.connect.sample.SampleSourceConnectorConfig.Companion.TOPIC_PARAM_CONFIG
+import de.codecentric.kafka.playground.connect.source.ServerSentEventSourceConnectorConfig.Companion.SSE_URI_PARAM_CONFIG
+import de.codecentric.kafka.playground.connect.source.ServerSentEventSourceConnectorConfig.Companion.TOPIC_PARAM_CONFIG
 import mu.KotlinLogging
 import org.apache.kafka.common.config.Config
 import org.apache.kafka.connect.connector.Task
 import org.apache.kafka.connect.errors.ConnectException
 import org.apache.kafka.connect.source.SourceConnector
 
-class SampleSourceConnector : SourceConnector() {
+class ServerSentEventSourceConnector : SourceConnector() {
     private val log = KotlinLogging.logger {}
     private lateinit var originalProps: Map<String, String>
 
     override fun version() = PropertiesUtil.connectorVersion
 
-    override fun config() = SampleSourceConnectorConfig.CONFIG_DEF
+    override fun config() = ServerSentEventSourceConnectorConfig.CONFIG_DEF
 
-    override fun taskClass(): Class<out Task?> = SampleSourceTask::class.java
+    override fun taskClass(): Class<out Task?> = ReceiveServerSentEventTask::class.java
 
     override fun validate(connectorConfigs: Map<String, String>): Config {
         val config = super.validate(connectorConfigs)
@@ -48,7 +48,7 @@ class SampleSourceConnector : SourceConnector() {
 
     override fun start(originalProps: Map<String, String>) {
         this.originalProps = originalProps
-        SampleSourceConnectorConfig(originalProps)
+        ServerSentEventSourceConnectorConfig(originalProps)
         log.info("Starting connector")
     }
 

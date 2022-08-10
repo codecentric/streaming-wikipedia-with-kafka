@@ -1,4 +1,4 @@
-package com.acme.kafka.connect.sample
+package de.codecentric.kafka.playground.connect.source
 
 import mu.KotlinLogging
 import java.util.*
@@ -7,7 +7,7 @@ object PropertiesUtil {
     private val log = KotlinLogging.logger {}
 
     private const val CONNECTOR_VERSION = "connector.version"
-    private const val propertiesFile = "/kafka-connect-sample.properties"
+    private const val propertiesFile = "/server-sent-event-connect.properties"
     private lateinit var properties: Properties
 
     init {

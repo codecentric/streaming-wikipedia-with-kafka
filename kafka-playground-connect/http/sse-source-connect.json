@@ -1,7 +1,7 @@
 {
-    "name": "basic-example",
+    "name": "wikipedia-sse-source-connector",
     "config": {
-        "connector.class": "com.acme.kafka.connect.sample.SampleSourceConnector",
+        "connector.class": "de.codecentric.kafka.playground.connect.source.ServerSentEventSourceConnector",
         "topic": "wikipedia-via-connect",
         "sse.uri": "https://stream.wikimedia.org/v2/stream/recentchange",
         "tasks.max": "1"

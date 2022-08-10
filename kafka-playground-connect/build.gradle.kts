@@ -22,14 +22,16 @@ dependencies {
     implementation("com.launchdarkly:okhttp-eventsource:2.7.0")
 }
 
-group = "com.acme.kafka.connect"
+group = "de.codecentric.kafka.playground.connect"
 version = "0.1.0"
-java.sourceCompatibility = JavaVersion.VERSION_17
+// Java 11 is used by the connector container.
+// If project is built with > Java 11 there are class not found errors during registration of connector.
+java.sourceCompatibility = JavaVersion.VERSION_11
 
 tasks.withType<KotlinCompile> {
     kotlinOptions {
         freeCompilerArgs = listOf("-Xjsr305=strict")
-        jvmTarget = "17"
+        jvmTarget = "11"
     }
 }
 
