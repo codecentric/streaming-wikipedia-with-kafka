@@ -1,7 +1,7 @@
 version: '2'
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
+    image: confluentinc/cp-zookeeper:7.0.5
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -9,7 +9,7 @@ services:
       - "22181:2181"
 
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:7.0.5
     depends_on:
       - zookeeper
     ports:
@@ -24,7 +24,7 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
   kafka-ui:
-    image: provectuslabs/kafka-ui
+    image: provectuslabs/kafka-ui:v0.4.0
     depends_on:
       - kafka
     environment:
@@ -71,7 +71,7 @@ services:
       - "7082:7082"
 
   connect:
-    image: confluentinc/cp-kafka-connect-base:latest
+    image: confluentinc/cp-kafka-connect-base:7.0.5
     hostname: connect
     container_name: connect
     depends_on:
