@@ -39,3 +39,7 @@ tasks.withType<ShadowJar> {
     archiveFileName.set("app.jar")
     exclude("org.apache.kafka:connect-api:3.2.1")
 }
+
+tasks.withType<Test> {
+    useJUnitPlatform()
+}

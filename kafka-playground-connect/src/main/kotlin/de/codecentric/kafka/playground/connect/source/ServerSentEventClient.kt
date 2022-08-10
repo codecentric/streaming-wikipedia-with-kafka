@@ -6,13 +6,16 @@ import com.launchdarkly.eventsource.MessageEvent
 import mu.KotlinLogging
 import java.net.URI
 import java.net.URISyntaxException
-import java.util.*
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.LinkedBlockingDeque
+import java.util.concurrent.TimeUnit
 
 class ServerSentEventClient(url: String) : EventHandler {
     private val log = KotlinLogging.logger {}
 
     private var eventSource: EventSource
-    private val eventQueue: Queue<MessageEvent> = LinkedList()
+
+    private val queue: BlockingQueue<MessageEvent> = LinkedBlockingDeque();
 
     init {
         eventSource = try {
@@ -35,17 +38,16 @@ class ServerSentEventClient(url: String) : EventHandler {
 
     fun receiveEvents(): List<MessageEvent> {
         val records: MutableList<MessageEvent> = ArrayList()
-        while (!eventQueue.isEmpty()) {
-            val current = eventQueue.poll()
-            if (current == null) {
-                log.info("Received null event")
-            } else if (current.data == null) {
-                log.info("Data is null");
-            } else {
-                records.add(current)
-            }
+        val event = queue.poll(1, TimeUnit.SECONDS);
+        if (event == null) {
+            log.info("Received null event");
+            return records;
         }
-        return records
+        if (event.data != null) {
+            records.add(event);
+        }
+        queue.drainTo(records);
+        return records;
     }
 
     override fun onOpen() {
@@ -58,7 +60,7 @@ class ServerSentEventClient(url: String) : EventHandler {
 
     override fun onMessage(eventName: String, messageEvent: MessageEvent) {
         log.debug { "Received event with name $eventName" }
-        eventQueue.add(messageEvent)
+        queue.offer(messageEvent);
     }
 
     override fun onComment(comment: String) {
