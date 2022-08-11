@@ -48,7 +48,6 @@ class ServerSentEventSourceConnector : SourceConnector() {
 
     override fun start(originalProps: Map<String, String>) {
         this.originalProps = originalProps
-        ServerSentEventSourceConnectorConfig(originalProps)
         log.info("Starting connector")
     }
 
