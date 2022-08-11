@@ -1,0 +1,9 @@
+{
+    "name": "wikipedia-sse-source-connector",
+    "config": {
+        "connector.class": "de.codecentric.kafka.playground.connect.source.ServerSentEventSourceConnector",
+        "topic": "wikipedia-via-connect",
+        "sse.uri": "https://stream.wikimedia.org/v2/stream/recentchange",
+        "tasks.max": "1"
+    }
+}
