@@ -6,6 +6,7 @@ import mu.KotlinLogging
 import org.apache.kafka.connect.data.Schema
 import org.apache.kafka.connect.source.SourceRecord
 import org.apache.kafka.connect.source.SourceTask
+import java.util.*
 
 class ReceiveServerSentEventTask : SourceTask() {
     private val log = KotlinLogging.logger {}
@@ -29,8 +30,8 @@ class ReceiveServerSentEventTask : SourceTask() {
                         emptyMap<String, Any>(),
                         emptyMap<String, Any>(),
                         config.getString(TOPIC_PARAM_CONFIG),
-                        null,
-                        null,
+                        Schema.STRING_SCHEMA,
+                        UUID.randomUUID().toString(),
                         Schema.STRING_SCHEMA,
                         event.data
                     )

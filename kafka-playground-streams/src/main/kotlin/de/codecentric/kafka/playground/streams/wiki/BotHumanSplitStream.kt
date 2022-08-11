@@ -2,7 +2,10 @@ package de.codecentric.kafka.playground.streams.wiki
 
 import de.codecentric.kafka.playground.streams.wiki.types.WikipediaEvent
 import org.apache.kafka.streams.StreamsBuilder
-import org.apache.kafka.streams.kstream.*
+import org.apache.kafka.streams.kstream.Branched
+import org.apache.kafka.streams.kstream.Consumed
+import org.apache.kafka.streams.kstream.KStream
+import org.apache.kafka.streams.kstream.Predicate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
