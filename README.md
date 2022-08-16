@@ -1,4 +1,4 @@
-# Kafka Playground
+# Streaming Wikipedia with Apache Kafka
 This repository contains a few samples how Kafka can be used. All samples are implemented using Kotlin and Gradle. 
 
 - kafka-playground-producer: Receives *server sent events* from Wikimedia via a Webflux client and sends the events to a Kafka topic.
